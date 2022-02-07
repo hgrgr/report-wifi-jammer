@@ -1,0 +1,12 @@
+LDLIBS += -lpcap
+
+all: wifi-jammer  
+
+wifi-jammer: wifi-jammer.o
+	gcc   -g -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Winline -I. -MMD -o wifi-jammer wifi-jammer.o libiw.so.29 -lm -lpcap -lpthread
+
+wifi-jammer.o: 
+	gcc -g -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Winline -I. -MMD -c wifi-jammer.cpp
+
+clean:
+	rm -rf wifi-jammer  *.o

